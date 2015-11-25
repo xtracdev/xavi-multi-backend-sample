@@ -1,0 +1,16 @@
+{
+  "port": 5000,
+  "protocol": "http",
+  "stubs": [
+    {
+      "responses": [
+        {
+          "is": {
+            "statusCode": 200,
+            "body": "Thing 1\n"
+          }
+        }
+      ]
+    }
+  ]
+}
