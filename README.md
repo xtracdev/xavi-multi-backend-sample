@@ -23,17 +23,23 @@ To wire up the API, use the following commands:
 
 <pre>
 export XAVI_KVSTORE_URL=file:///`pwd`/config
-./multi-backend-sample add-server -address localhost -port 5000 -name thing1svr
-./multi-backend-sample add-server -address localhost -port 6000 -name thing2svr
-./multi-backend-sample add-backend -name thing1 -servers thing1svr
-./multi-backend-sample add-backend -name thing2 -servers thing2svr
-./multi-backend-sample add-route -name things-route -backends thing1,thing2 -base-uri /things -multibackend-adapter handle-things
-./multi-backend-sample add-listener -name things-listener -routes things-route
+./xavi-multi-backend-sample add-server -address localhost -port 5000 -name thing1svr
+./xavi-multi-backend-sample add-server -address localhost -port 6000 -name thing2svr
+./xavi-multi-backend-sample add-backend -name thing1 -servers thing1svr
+./xavi-multi-backend-sample add-backend -name thing2 -servers thing2svr
+./xavi-multi-backend-sample add-route -name things-route -backends thing1,thing2 -base-uri /things -multibackend-adapter handle-things
+./xavi-multi-backend-sample add-listener -name things-listener -routes things-route
 </pre>
 
 Once the configuration is in place, boot the listener:
 
 <pre>
-./multi-backend-sample listen -ln things-listener -address 0.0.0.0:8080
+./xavi-multi-backend-sample listen -ln things-listener -address 0.0.0.0:8080
+</pre>
+
+And curl away...
+
+<pre>
+curl localhost:8080/things
 </pre>
 

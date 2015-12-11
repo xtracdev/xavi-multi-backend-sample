@@ -4,7 +4,7 @@ import (
 	"os"
 	"github.com/xtracdev/xavi/runner"
 	"github.com/xtracdev/xavi/plugin"
-	"github.com/xtracdev/multi-backend-sample/adapter"
+	"github.com/xtracdev/xavi-multi-backend-sample/adapter"
 )
 
 func main() {

@@ -6,18 +6,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"time"
+	"golang.org/x/net/context"
 )
 
 
-func callThingBackend(h http.Handler, r *http.Request) string {
+func callThingBackend(ctx context.Context, h plugin.ContextHandler, r *http.Request) string {
 	recorder := httptest.NewRecorder()
-	h.ServeHTTP(recorder, r)
+	h.ServeHTTPContext(ctx, recorder, r)
 	return recorder.Body.String()
 }
 
 
 //HandleThings provides a handler that responds with data from the thing1 and thing2 backends.
-var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMap, w http.ResponseWriter, r *http.Request) {
+var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMap, ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	c := make(chan string)
 
 	thing1Handler, ok := m["thing1"]
@@ -32,8 +33,8 @@ var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMa
 		return
 	}
 
-	go func() { c <- callThingBackend(thing1Handler,r) }()
-	go func() { c <- callThingBackend(thing2Handler,r) }()
+	go func() { c <- callThingBackend(ctx, thing1Handler,r) }()
+	go func() { c <- callThingBackend(ctx, thing2Handler,r) }()
 
 	var results []string
 	timeout := time.After(150 * time.Millisecond)
@@ -57,7 +58,7 @@ var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMa
 
 func HandleThingsFactory(bhMap plugin.BackendHandlerMap) *plugin.MultiBackendAdapter {
 	return &plugin.MultiBackendAdapter{
-		Ctx:     bhMap,
+		BackendHandlerCtx:     bhMap,
 		Handler: HandleThings,
 	}
 }
