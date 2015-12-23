@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"time"
 	"golang.org/x/net/context"
+	"github.com/xtracdev/xavi-multi-backend-sample/session"
 )
 
 
@@ -19,6 +20,14 @@ func callThingBackend(ctx context.Context, h plugin.ContextHandler, r *http.Requ
 
 //HandleThings provides a handler that responds with data from the thing1 and thing2 backends.
 var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMap, ctx context.Context, w http.ResponseWriter, r *http.Request) {
+
+	if ctx != nil {
+		sid, ok := ctx.Value(session.SessionKey).(int)
+		if ok {
+			println("-----> session:", sid)
+		}
+	}
+
 	c := make(chan string)
 
 	thing1Handler, ok := m["thing1"]
