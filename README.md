@@ -27,7 +27,7 @@ export XAVI_KVSTORE_URL=file:///`pwd`/config
 ./xavi-multi-backend-sample add-server -address localhost -port 6000 -name thing2svr
 ./xavi-multi-backend-sample add-backend -name thing1 -servers thing1svr
 ./xavi-multi-backend-sample add-backend -name thing2 -servers thing2svr
-./xavi-multi-backend-sample add-route -name things-route -backends thing1,thing2 -base-uri /things -plugins SessionId -multibackend-adapter handle-things
+./xavi-multi-backend-sample add-route -name things-route -backends thing1,thing2 -base-uri /things -plugins SessionId,Timing,Recovery -multibackend-adapter handle-things
 ./xavi-multi-backend-sample add-listener -name things-listener -routes things-route
 </pre>
 

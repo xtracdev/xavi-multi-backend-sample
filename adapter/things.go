@@ -8,11 +8,15 @@ import (
 	"time"
 	"golang.org/x/net/context"
 	"github.com/xtracdev/xavi-multi-backend-sample/session"
+	"sync"
 )
 
+var mutex sync.Mutex
 
 func callThingBackend(ctx context.Context, h plugin.ContextHandler, r *http.Request) string {
 	recorder := httptest.NewRecorder()
+	mutex.Lock()
+	defer mutex.Unlock()
 	h.ServeHTTPContext(ctx, recorder, r)
 	return recorder.Body.String()
 }
