@@ -91,3 +91,10 @@ And curl away...
 <pre>
 curl localhost:8080/things
 </pre>
+
+Note the above can also be run with a health check. To health check the https endpoint, modify
+the server command for thing2svr:
+
+<pre>
+./xavi-multi-backend-sample add-server -address `hostname` -port 6000 -name thing2svr -health-check http-get
+</pre>
