@@ -43,3 +43,58 @@ And curl away...
 curl localhost:8080/things
 </pre>
 
+
+For using a multi-backend server route with an HTTPs backend, generate a key and cert to use, first by building the
+generate cert program that come with golang:
+
+<pre>
+cd $GOROOT
+cd src/crypto/tls
+go build generate_cert.go
+</pre>
+
+Then using it to generate your cert:
+
+<pre>
+$GOROOT/src/crypto/tls/generate_cert -ca -host `hostname`
+</pre>
+
+Note the hostname used for TLS will be verified by golang.
+
+Once the cert and key are in place, update imposter2-https.json with the key and cert.
+
+<pre>
+curl -i -X POST -H 'Content-Type: application/json' -d@imposter1.json http://127.0.0.1:2525/imposters
+curl -i -X POST -H 'Content-Type: application/json' -d@imposter2-https.json http://127.0.0.1:2525/imposters
+</pre>
+
+Then apply the following configuration:
+
+<pre>
+export XAVI_KVSTORE_URL=file:///`pwd`/config
+./xavi-multi-backend-sample add-server -address localhost -port 5000 -name thing1svr
+./xavi-multi-backend-sample add-server -address `hostname` -port 6000 -name thing2svr
+./xavi-multi-backend-sample add-backend -name thing1 -servers thing1svr
+./xavi-multi-backend-sample add-backend -name thing2 -servers thing2svr -cacert-path ./cert.pem -tls-only=true
+./xavi-multi-backend-sample add-route -name things-route -backends thing1,thing2 -base-uri /things -plugins SessionId,Timing,Recovery -multibackend-adapter handle-things
+./xavi-multi-backend-sample add-listener -name things-listener -routes things-route
+</pre>
+
+Once the configuration is in place, boot the listener:
+
+<pre>
+./xavi-multi-backend-sample listen -ln things-listener -address 0.0.0.0:8080
+</pre>
+
+And curl away...
+
+<pre>
+curl localhost:8080/things
+</pre>
+
+Note the above can also be run with a health check. To health check the https endpoint, modify
+the server command for thing2svr:
+
+<pre>
+./xavi-multi-backend-sample add-server -address `hostname` -port 6000 -name thing2svr -health-check http-get
+</pre>
