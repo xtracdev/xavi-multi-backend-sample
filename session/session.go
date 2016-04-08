@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+	"sync"
 )
 
 type sessionKey int
@@ -16,6 +17,8 @@ const SessionKey sessionKey = 111
 func NewSessionWrapper() plugin.Wrapper {
 	return new(SessionWrapper)
 }
+
+var mutex sync.Mutex
 
 var seed = rand.NewSource(time.Now().UnixNano())
 var gen = rand.New(seed)
@@ -28,7 +31,11 @@ func (lw SessionWrapper) Wrap(h plugin.ContextHandler) plugin.ContextHandler {
 			c = context.Background()
 		}
 
-		c = context.WithValue(c, SessionKey, gen.Intn(999999999))
+		mutex.Lock()
+		sessionId := gen.Intn(999999999)
+		mutex.Unlock()
+
+		c = context.WithValue(c, SessionKey, sessionId)
 
 		h.ServeHTTPContext(c, w, r)
 	})
