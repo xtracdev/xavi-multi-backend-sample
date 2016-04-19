@@ -2,25 +2,26 @@ package adapter
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/xtracdev/xavi-multi-backend-sample/session"
 	"github.com/xtracdev/xavi/plugin"
+	"github.com/xtracdev/xavi/plugin/timing"
+	"golang.org/x/net/context"
 	"net/http"
 	"net/http/httptest"
-	"time"
-	"golang.org/x/net/context"
-	"github.com/xtracdev/xavi-multi-backend-sample/session"
 	"sync"
+	"time"
 )
 
 var mutex sync.Mutex
 
-func callThingBackend(ctx context.Context, h plugin.ContextHandler, r *http.Request) string {
+func callThingBackend(thing string, ctx context.Context, h plugin.ContextHandler, r *http.Request) string {
 	recorder := httptest.NewRecorder()
 	mutex.Lock()
 	defer mutex.Unlock()
 	h.ServeHTTPContext(ctx, recorder, r)
 	return recorder.Body.String()
 }
-
 
 //HandleThings provides a handler that responds with data from the thing1 and thing2 backends.
 var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMap, ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -46,8 +47,10 @@ var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMa
 		return
 	}
 
-	go func() { c <- callThingBackend(ctx, thing1Handler,r) }()
-	go func() { c <- callThingBackend(ctx, thing2Handler,r) }()
+	end2endTimer := timing.TimerFromContext(ctx)
+	cont := end2endTimer.StartContributor("backend stuff")
+	go func() { c <- callThingBackend("thing one", ctx, thing1Handler, r) }()
+	go func() { c <- callThingBackend("thing two", ctx, thing2Handler, r) }()
 
 	var results []string
 	timeout := time.After(150 * time.Millisecond)
@@ -55,7 +58,9 @@ var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMa
 		select {
 		case result := <-c:
 			results = append(results, result)
+			cont.End(nil)
 		case <-timeout:
+			cont.End(errors.New("timeout error"))
 			http.Error(w, "Timeout", http.StatusInternalServerError)
 			return
 		}
@@ -71,7 +76,7 @@ var HandleThings plugin.MultiBackendHandlerFunc = func(m plugin.BackendHandlerMa
 
 func HandleThingsFactory(bhMap plugin.BackendHandlerMap) *plugin.MultiBackendAdapter {
 	return &plugin.MultiBackendAdapter{
-		BackendHandlerCtx:     bhMap,
-		Handler: HandleThings,
+		BackendHandlerCtx: bhMap,
+		Handler:           HandleThings,
 	}
 }
