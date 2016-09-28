@@ -2,12 +2,12 @@
 package session
 
 import (
+	"context"
 	"github.com/xtracdev/xavi/plugin"
-	"golang.org/x/net/context"
 	"math/rand"
 	"net/http"
-	"time"
 	"sync"
+	"time"
 )
 
 type sessionKey int
@@ -25,18 +25,14 @@ var gen = rand.New(seed)
 
 type SessionWrapper struct{}
 
-func (lw SessionWrapper) Wrap(h plugin.ContextHandler) plugin.ContextHandler {
-	return plugin.ContextHandlerFunc(func(c context.Context, w http.ResponseWriter, r *http.Request) {
-		if c == nil {
-			c = context.Background()
-		}
-
+func (lw SessionWrapper) Wrap(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mutex.Lock()
 		sessionId := gen.Intn(999999999)
 		mutex.Unlock()
 
-		c = context.WithValue(c, SessionKey, sessionId)
+		newR := r.WithContext(context.WithValue(r.Context(), SessionKey, sessionId))
 
-		h.ServeHTTPContext(c, w, r)
+		h.ServeHTTP(w, newR)
 	})
 }
